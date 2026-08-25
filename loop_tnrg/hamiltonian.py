@@ -1,7 +1,7 @@
 import numpy as np
 from ncon import ncon
 from scipy.linalg import expm
-from linalg_utils import trim_svd, trim_indices
+from .linalg_utils import trim_svd, trim_indices
 
 
 def Ising_fusion_hamiltonian(r,theta, repel, delta_t, chi_init, stol = 1E-15):

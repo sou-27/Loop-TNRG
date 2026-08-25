@@ -24,7 +24,7 @@ def trim_svd(A, chi, stol, print_err = False):
 
     chitol = ([i for i in range(len(s)) if s[i] > stol][-1])
 
-    chitemp = min(chitol, chi, len(s))
+    chitemp = min(chitol+1, chi, len(s))
 
     U = U[:,:chitemp]
     s = s[:chitemp]

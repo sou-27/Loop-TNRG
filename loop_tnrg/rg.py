@@ -1,8 +1,8 @@
 import numpy as np
-from hamiltonian import Ising_fusion_hamiltonian
-from network_ops import compress_layer, decompose_network, recombine_network, normalize_network
-from optimize import loop_optimize
-from cft_data import cft_data, spec_v, spec_h, reduced_cft_data
+from .hamiltonian import Ising_fusion_hamiltonian
+from .network_ops import compress_layer, decompose_network, recombine_network, normalize_network
+from .optimize import loop_optimize
+from .cft_data import cft_data, spec_v, spec_h, reduced_cft_data
 
 
 def tnrg(r,theta,repel,delta_t, chi_init, n_layers, chi, niterations, niter = 30, rtol = 1e-5, atol = 1e-10):

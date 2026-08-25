@@ -7,3 +7,8 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+results/
+output/
+data/output/
+*.npz
+*.h5

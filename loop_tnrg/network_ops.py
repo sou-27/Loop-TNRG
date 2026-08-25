@@ -1,6 +1,6 @@
 import numpy as np
 from ncon import ncon
-from linalg_utils import trim_indices
+from .linalg_utils import trim_indices
 import scipy.linalg as SA
 
 def check_isotropic(T):

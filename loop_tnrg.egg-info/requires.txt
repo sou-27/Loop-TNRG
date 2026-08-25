@@ -1,0 +1,8 @@
+numpy
+scipy
+h5py
+ncon
+
+[dev]
+pytest>=7.0
+ruff>=0.1.0

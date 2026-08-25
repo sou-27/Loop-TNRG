@@ -3,6 +3,20 @@ from ncon import ncon
 from scipy.sparse.linalg import cg
 
 def create_N(S,i):
+    """ Create the tensor N_i used for Loop optimization.
+
+    Parameters
+    ---------
+    S : list, length 8
+    List of tensors in the tensor network after decomposing into rank-3 tensors
+    i : int, site of tensor to be optimized
+
+    Returns
+    -------
+    N : ndarray
+    Tensor used in optimization procedure
+
+    """
     local_tensors = []
     for k in range(i+1, i+8):
         q = ncon([np.conj(S[np.mod(k,8)]), S[np.mod(k,8)]],[[-1,1,-2],[-3,1,-4]])
@@ -21,9 +35,25 @@ def create_N(S,i):
 
 
 def create_W(T,S,i):
-    # T contains 4 rank-4 tensors
-    # N_tensors contains 8 rank-3 tensors, with the tensor to be optimized moved to the front
-    # i is the index of the tensor to be optimized
+    """Create the tensor W_i used for Loop optimization.
+
+    Parameters
+    ----------
+    T : list, length 4
+    List of rank-4 tensors in the network
+
+    S : list, length 4
+    List of tensors in the network after decompositions into rank 3 tensors
+
+    i : int
+    Index of tensor site to be optimized
+
+    Returns
+    -------
+    W : ndarray
+    Tensor W used in optimization procedure
+
+    """
     if i%2 == 0:
         wj = i//2
         local_tensors = []
@@ -53,6 +83,16 @@ def create_W(T,S,i):
     return W
 
 def cost_function(S, T):
+    """ Calculates the cost functions 
+    
+    Parameters
+    ----------
+    S : List, length 8
+    List of rank-3 tensors obtained after decmomposition of tensor network
+
+    T : List, length 4
+    List of rank-4 tensors making up the tensor network 
+    """
     #Calulating <S|S>
     local_tensors = []
     for k in range(8):
@@ -91,20 +131,31 @@ def cost_function(S, T):
     tt = ncon([tt],[1,2,2,1])
 
     fidelity = (st)**2/(ss*tt)
-    # cost = ss + tt - (2*st)
-    #print(cost)
     cost = 1-fidelity
     return cost    
 
 def optimize_bond(N,W, ss):
+    """ Bond at site is optimized via a eigenvalue problem
 
+    Parameters
+    ----------
+    N,W : ndarrays
+
+    Parameters to be used in the optimization procedure
+
+    ss: ndarray
+    Initial guess for the conjugate gradient optimization procedure.
+
+    Returns
+    -------
+    Optimized tensor S 
+
+    """
     N_matrix = N.reshape(N.shape[0] * N.shape[1] * N.shape[2], N.shape[3] * N.shape[4] * N.shape[5])
 
     W_vector = W.reshape(W.shape[0] * W.shape[1] * W.shape[2])
 
-    #s = SA.solve(N_matrix, W_vector, assume_a='sym')
     s, info = cg(N_matrix, W_vector, ss.reshape(ss.shape[0] * ss.shape[1] * ss.shape[2]))
-    #s = sparse.linalg.spsolve(N_matrix, W_vector)
     S = s.reshape(W.shape[0], W.shape[1], W.shape[2])
 
     return S

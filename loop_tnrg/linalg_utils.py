@@ -4,6 +4,17 @@ import scipy.linalg as SA
 import copy
 
 def unique_qr(A):
+    """ Performs a QR decomposition of the matrix A. The inbuilt qr module of numpy does not return a unique decomposition. This module fixes the gauge.
+
+    Parameters
+    ----------
+    A : matrix
+    Matrix to be decomposed
+
+    Returns
+    -------
+    Q, R : matrices such that A = Q @ R, where Q is orthogonal and R is upper triangular.
+    """
     Q, R = np.linalg.qr(A, mode = 'reduced')
     signs = 2 * (np.diag(R) >= 0) - 1
     Q = Q * signs[np.newaxis, :]
@@ -12,6 +23,19 @@ def unique_qr(A):
 
 
 def lq(A):
+    """Performs LQ decompositon of matrix A.
+    
+    Parameters
+    ----------
+    A : matrix
+    Matrix to be decomposed
+
+
+    Returns
+    -------
+    L,Q : matrices such that A = L @ Q, where Q is orthogonal and L is lower triangular.
+    
+    """
     q_qr,R_qr = unique_qr(A.T)
     q = q_qr.T
     L = R_qr.T
@@ -19,6 +43,19 @@ def lq(A):
     return L,q
 
 def trim_svd(A, chi, stol, print_err = False):
+    """ Performs a truncated SVD for the matrix A.
+
+    Parameters
+    ----------
+    A : matrix, matrix to be decomposed.
+    chi : int, maximum bond dimension to be truncated to.
+    stol : float, tolerance for truncations. Singular values greater than stol are kept.
+    print_err : boolean, if true, print the truncation error.
+
+    Returns
+    -------
+    U,s,V : matrices such that A = U @ s @ V. The matrix dimensions are appropriately truncated according to chi and stol.
+    """
     U, s, V = SA.svd(A, full_matrices=False)
 
 
@@ -36,62 +73,24 @@ def trim_svd(A, chi, stol, print_err = False):
 
     return U, s, V
 
-def condition_network(S,chi, stol=1e-7):
-    S_cond = copy.deepcopy(S)
-    S_cond.append(S[0])
-    
-    q,R = unique_qr(S_cond[0].reshape(S_cond[0].shape[0] * S_cond[0].shape[1], S_cond[0].shape[2]))
-    Rs = [R]
-
-    for i in range(1,len(S_cond)):
-        q,R = unique_qr(ncon([Rs[-1],S_cond[i]],[[-1,1],[1,-2,-3]]).reshape(-1,S_cond[i].shape[2]))
-        Rs.append(R)
-    
-    L, q = lq(S_cond[-1].reshape(S_cond[-1].shape[0], -1))
-    Ls = [L]
-
-    for i in range(-2,-(len(S_cond)+1),-1):
-        L, q = lq(ncon([S_cond[i], Ls[0]],[[-1,-2,1],[1,-3]]).reshape(S_cond[i].shape[0],-1))
-        Ls.insert(0,L)
-    
-    Rs.pop(-1)
-    Ls.pop(0)
-
-    P_as = []
-    P_bs = []
-
-    for i in range(len(S_cond)-1):
-        R = Rs[i]
-        L = Rs[i]
-
-        u,s,vdag = SA.svd(R @ L, full_matrices=False)
-
-        s_trim = s * (s > stol) + stol * (s < stol)
-
-        chitemp = min(len(s_trim), chi)
-        u = u[:,:chitemp]
-        vdag = vdag[:chitemp, :]
-        s_trim = s_trim[:chitemp]
-
-        Pa = L @ np.conj(vdag).T @ np.diag(1/np.sqrt(s))
-        Pb = np.diag(1/np.sqrt(s)) @ np.conj(u).T @ R
-
-        P_as.append(Pa)
-        P_bs.append(Pb)
-    
-    newS = []
-
-    S_tilde = ncon([P_bs[-1], S[0], P_as[0]], [[-1,1],[1,-2,2],[2,-3]])
-    newS.append(S_tilde)
-
-    for i in range(1,len(S)):
-        S_tilde = ncon([P_bs[i-1], S[i], P_as[i]], [[-1,1],[1,-2,2],[2,-3]])
-        newS.append(S_tilde)
-    
-    return newS
 
 def trim_indices(T, chi, stol = 1E-9, niter = 50, tol = 1E-5):
+    """ Trim the internal indices of a layer of tensor network by treating it as an iMPS.
 
+    Parameters
+    ----------
+    T : ndarray, tensor making up the network
+    chi : int, maximum bond dimension to be truncated to
+    stol : float, tolerance for svd truncation
+    niter : int, maximum number of passes in trying to find appropriate L/R.
+    tol : float, If L/R is converged up to tol, we stop.
+
+    Returns
+    -------
+    T : ndarray, tensor with trimmed indices.    
+    
+    
+    """
     q,L_prev = unique_qr(T.reshape(-1, T.shape[3]))
     L_prev = L_prev / np.max(np.diag(L_prev))
 

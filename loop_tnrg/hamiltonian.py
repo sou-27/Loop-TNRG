@@ -5,11 +5,30 @@ from .linalg_utils import trim_svd, trim_indices
 
 
 def Ising_fusion_hamiltonian(r,theta, repel, delta_t, chi_init, stol = 1E-15):
-    d = 3
-    # |1> ---> 0
-    # |\psi> ---> 1
-    # |\sigma> ---> 2
+    """Creates the tensors that make up the tensor network. We use the encoding 
+    |1> --> 0
+    |\psi> --> 1
+    |\sigma> --> 2
 
+    The hamiltonian H is created and then the tensor U = \exp(-\delta_t H) is created which makes up the tensor netowrk (at this point it is not a square lattice).
+    The network is further massaged into a square lattice of repeating unit T.
+
+    Parameters
+    ----------
+    r : float, parameter of the hamiltonian
+    theta : float, parameter of the hamiltonian
+    repel : float, parameter of the hamiltonian. Used to enforce fusion rules in the anyon chain.
+    delta_t :  float, parameter in the euclidean path integral. Lengh of discrete time-step.
+    chi_init : int, maximum bond dimension to initialize the tensor network in.
+    stol : float, tolerance to be used in trimming indices.
+
+
+    Returns
+    -------
+    T : ndarray
+    Rank-4 tensor that make sup the desired tensor network.
+    """
+    d = 3
     H = np.zeros((d**3, d**3))
     hi = {
         "000" : [[np.cos(theta),"020"]],
@@ -54,23 +73,20 @@ def Ising_fusion_hamiltonian(r,theta, repel, delta_t, chi_init, stol = 1E-15):
         H = H + eng_shift
     U = expm(- delta_t * HH).reshape(d,d,d,d,d,d)
 
-    #h = 0.5 * (U + U.transpose(3,4,5,0,1,2))
-    #D,vv = SA.eigh(h.reshape(d**3, d**3))
-    #S5 = (vv@np.diag(np.sqrt(D))).reshape(d,d,d, len(D))
-    #S6 = np.conj(S5).transpose(3,0,1,2)
+
 
     u, s, v = trim_svd(U.reshape(U.shape[0] * U.shape[1] * U.shape[2], -1), chi_init, stol)
     S5 = (u @ np.diag(np.sqrt(s))).reshape(d,d,d,len(s))
     S6 = (np.diag(np.sqrt(s)) @ v).reshape(len(s),d,d,d)
     uu = U.transpose(0,3,1,4,2,5)
 
-    #u, s, v = SA.svd(uu.reshape(uu.shape[0] * uu.shape[1], -1), full_matrices=False)
+    
     u, s, v = trim_svd(uu.reshape(uu.shape[0] * uu.shape[1], -1), chi_init, stol)
 
     S1 = ( u @ np.diag(np.sqrt(s))).reshape(d,d,len(s))
     S2 = (np.diag(np.sqrt(s)) @ v).reshape(len(s),d,d,d,d)
 
-    #u, s, v = SA.svd(uu.reshape(uu.shape[0] * uu.shape[1] * uu.shape[2] * uu.shape[3], -1), full_matrices=False)
+    
     u, s, v = trim_svd(uu.reshape(uu.shape[0] * uu.shape[1] * uu.shape[2] * uu.shape[3], -1), chi_init, stol)
     S3 = ( u @ np.diag(np.sqrt(s))).reshape(d,d,d,d,len(s))
     S4 = (np.diag(np.sqrt(s)) @ v).reshape(len(s),d,d)

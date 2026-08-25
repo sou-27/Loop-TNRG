@@ -5,6 +5,19 @@ from scipy.sparse.linalg import eigs
 
 
 def cft_data(T):
+    """Calculates central charge and scaling dimensions from tensor network T. Uses naive implementation using tensors from current network.
+    
+    Parameters
+    ---------
+    T : list of ndarrays, rank-4 tensors making up the tensor network
+
+    Returns
+    -------
+    eps : float, normalization used in computing cft data
+    c : float, central charge
+    v :  float, speed of light
+    scaling_dims : array, array containing scaling dimensions.
+    """
     def T_22(v):
         v = v.reshape(T[0].shape[2], T[1].shape[1])
         result = ncon([v,T[0],T[1],T[2],T[3]],[[1, 2], [4,8,-1,6], [6,-2,8,5], [5,7,2,3],[3,1,7,4]], [1,2,3,7,4,5,6,8])
@@ -53,6 +66,16 @@ def cft_data(T):
     
 
 def spec_v(T):
+    """Diagonalizes specific tensor required for computing conformal data. 
+    
+    Parameters
+    ----------
+    T : list of ndarrays, rank-4 tensors makig up the tensor network.
+    
+    Returns
+    -------
+    eig_22: list of floats, desired eigenvalues.
+    """
     def T_22(v):
         v = v.reshape(T[0].shape[2], T[1].shape[1])
         result = ncon([v,T[0],T[1],T[2],T[3]],[[1, 2], [4,8,-1,6], [6,-2,8,5], [5,7,2,3],[3,1,7,4]], [1,2,3,7,4,5,6,8])
@@ -67,6 +90,16 @@ def spec_v(T):
     
 
 def spec_h(T):
+    """Diagonalizes specific tensor required for computing conformal data. 
+        
+        Parameters
+        ----------
+        T : list of ndarrays, rank-4 tensors makig up the tensor network.
+        
+        Returns
+        -------
+        eig_22_tilde: list of floats, desired eigenvalues.
+        """
     def T_22_tilde(v):
         v = v.reshape(T[3].shape[2], T[0].shape[1])
         result = ncon([v,T[0],T[1],T[2],T[3]],[[8,7],[1,-2,2,3], [3,5,7,4], [4,8,5,6], [6,2,-1,1]], [7,8,4,5,6,3,1,2])
@@ -81,6 +114,19 @@ def spec_h(T):
 
     
 def reduced_cft_data(T, eig_22, eig_22_tilde):
+    """Calculates central charge and scaling dimensions from tensor network T. Uses optimized implementation using data from previous RG step.
+        
+        Parameters
+        ---------
+        T : list of ndarrays, rank-4 tensors making up the tensor network
+    
+        Returns
+        -------
+        eps : float, normalization used in computing cft data
+        c : float, central charge
+        v :  float, speed of light
+        scaling_dims : array, array containing scaling dimensions.
+        """
 
     def A(v):
         v = v.reshape(T[3].shape[1], T[3].shape[0], T[1].shape[3], T[1].shape[2])
